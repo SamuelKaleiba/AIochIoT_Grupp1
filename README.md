@@ -34,6 +34,11 @@ Detta projekt är en del av YH-utbildningen *AI och IoT* (BK24TR) och syftar til
 - **SMHI** – väderdata baserat på plats
 - **OpenCage** – geokodning av platsnamn till koordinater
 
+## 🏗️ Data Arkitektur
+
+Dataarkitekturen för det här projektet använder tre olika lager **Data Collection**, **Cloud Intelligence and services**, and **Application and interaction**:
+![data_architecture](docs/data_architecture.png)
+
 ## 🗓️ Tidsplan (sammandrag)
 
 | Månad | Aktivitet |

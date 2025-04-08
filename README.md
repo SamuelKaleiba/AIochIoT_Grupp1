@@ -37,7 +37,7 @@ Detta projekt är en del av YH-utbildningen *AI och IoT* (BK24TR) och syftar til
 ## 🏗️ Data Arkitektur
 
 Dataarkitekturen för det här projektet använder tre olika lager **Data Collection**, **Cloud Intelligence and services**, and **Application and interaction**:
-![data_architecture](docs/data_architecture.png)
+![DataArchitecture_AIochIoT](docs/projektdokumentation/DataArchitecture_AIochIoT.png)
 
 ## 🗓️ Tidsplan (sammandrag)
 

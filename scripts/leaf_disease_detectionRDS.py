@@ -1,25 +1,8 @@
 import boto3
-import pyodbc
-import os
+from db_connection import get_connection
 import time
 
-# AWS Rekognition används fortfarande
 rekognition = boto3.client('rekognition')
-
-# Miljövariabler från Lambda
-rds_host = os.environ['RDS_HOST']
-rds_user = os.environ['RDS_USER']
-rds_password = os.environ['RDS_PASSWORD']
-rds_db_name = os.environ['RDS_DB_NAME']
-rds_port = os.environ.get('RDS_PORT', '1433')
-
-conn_str = (
-    f'DRIVER={{ODBC Driver 17 for SQL Server}};'
-    f'SERVER={rds_host},{rds_port};'
-    f'DATABASE={rds_db_name};'
-    f'UID={rds_user};'
-    f'PWD={rds_password};'
-)
 
 def detect_leaf_disease(bucket, image):
     response = rekognition.detect_labels(
@@ -31,7 +14,7 @@ def detect_leaf_disease(bucket, image):
     disease = 'Disease' in labels or 'Blight' in labels
 
     try:
-        conn = pyodbc.connect(conn_str, timeout=5)
+        conn = get_connection()
         cursor = conn.cursor()
 
         insert_query = """
@@ -44,8 +27,8 @@ def detect_leaf_disease(bucket, image):
         cursor.execute(insert_query, (
             image,
             int(time.time()),
-            ','.join(labels),    # Gör om listan till en sträng
-            int(disease)         # True/False konverteras till 1/0
+            ','.join(labels),
+            int(disease)
         ))
 
         conn.commit()

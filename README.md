@@ -13,22 +13,22 @@ Detta projekt är en del av YH-utbildningen *AI och IoT* (BK24TR) och syftar til
 
 ### 📷 AI-analys av grödor
 - **Amazon Rekognition Custom Labels**
-- Bilder laddas upp till S3 → Triggers via Lambda → Analysresultat lagras i DynamoDB
+- Bilder laddas upp till S3 → Triggers via Lambda → Analysresultat lagras i RDS (Microsoft Sequel Server)
 
 ### 📡 IoT-infrastruktur
 - **Sensorer**: markfuktighet, temperatur, luftfuktighet, ljus
 - **AWS IoT Core** hanterar datainsamling i realtid
-- **Kommunikation**: Wi-Fi / 4G / 5G / LoRa
+- **Kommunikation**: Wi-Fi / 4G / 5G
 
 ### ☁️ Molntjänster och datahantering
 - **S3** för bildlagring
-- **DynamoDB** / **RDS** för strukturerad data
+- **RDS** för strukturerad data
 - **Amazon Quicksight** för datavisualisering och analys
 
 ### 🤖 Chatbot & användargränssnitt
 - **Amazon Lex** – användaren kan prata/texta med AI:n för väder, fukt, och rekommendationer
 - **AWS Lambda** – hanterar API-anrop (t.ex. SMHI, OpenCage)
-- **Frontend**: React + AWS Amplify / mobilapp
+- **Frontend**: Streamlit / mobilapp
 
 ## 🛰️ Externa API:er
 - **SMHI** – väderdata baserat på plats

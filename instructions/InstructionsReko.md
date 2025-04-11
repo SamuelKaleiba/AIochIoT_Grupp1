@@ -103,8 +103,4 @@ Denna guide beskriver hur ni kan samla in, organisera, märka upp och förbereda
 
 ---
 
-## Användning
-
-1. **Spara filen:** Kopiera ovanstående text till en fil med namnet `instructions.md`.
-2. **Konvertera till PDF:** Använd ett verktyg som Pandoc. Exempelkommando:
 

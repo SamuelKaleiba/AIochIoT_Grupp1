@@ -1,4 +1,4 @@
-# 🍇 Smart WineMaking – AI & IoT för hållbar vinodling
+# 🍇 Sustainable WineMaking – AI & IoT för hållbar vinodling
 
 **Ett AI- och IoT-projekt från YH-utbildningen "AI och IoT" (BK24TR)**  
 **Gruppmedlemmar:** Agne Dimaisate, Therese Andersson, Daniel Karlsson, Axel Gummesson  
@@ -7,7 +7,7 @@
 
 ## 🌱 Projektöversikt
 
-Smart WineMaking är en **Minimum Viable Product (MVP)** som visar hur svenska druvodlare kan fatta datadrivna beslut med hjälp av AI och IoT. Genom simulering av sensorflöden och bildanalys demonstreras ett beslutstödsystem som kan upptäcka sjukdomar, optimera bevattning och förbättra skördekvalitet – även i klimat med korta växtsäsonger och höga fuktnivåer.
+Sustainable WineMaking är ett projekt för att skapa en **Minimum Viable Product (MVP)** som visar hur svenska druvodlare kan fatta datadrivna beslut med hjälp av AI och IoT. Genom simulering av sensorflöden och bildanalys demonstreras ett beslutstödsystem som kan upptäcka sjukdomar, optimera bevattning och förbättra skördekvalitet – även i klimat med korta växtsäsonger och höga fuktnivåer.
 
 *Obs: Projektet använder mockup-sensordata i växthusmiljö för att simulera ett verkligt scenario.*
 

@@ -57,6 +57,8 @@ Systemet bygger på tre nivåer:
 2. **Cloud Services:** AI, API-anrop och datalagring  
 3. **User Interaction:** Dashboard, chatbot och automatiska rekommendationer
 
+![dataaArchitecture_AIochIoT](docs/projektdokumentation/DataArchitecture_AIochIoT.png)
+
 ---
 
 ## ⚠️ Identifierade utmaningar

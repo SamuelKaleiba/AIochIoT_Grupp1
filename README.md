@@ -1,78 +1,75 @@
-# 🍇 Smart WineMaking – AI & IoT för vinodling
+# 🍇 Sustainable WineMaking – AI & IoT för hållbar vinodling
 
-Detta projekt är en del av YH-utbildningen *AI och IoT* (BK24TR) och syftar till att förbättra vinodling genom smart teknik. Genom att kombinera artificiell intelligens, IoT-sensorer och molntjänster kan vinodlare fatta mer informerade beslut om sjukdomsbekämpning, bevattning och skörd.
+**Ett AI- och IoT-projekt från YH-utbildningen "AI och IoT" (BK24TR)**  
+**Gruppmedlemmar:** Agne Dimaisate, Therese Andersson, Daniel Karlsson, Axel Gummesson  
 
-## 🌟 Mål
+---
 
-- ✔️ Tidig upptäckt av sjukdomar med bildigenkänning (Amazon Rekognition)
-- ✔️ Optimerad bevattning och resurshantering via IoT-sensorer
-- ✔️ Förbättrad druvkvalitet och stabil avkastning
-- ✔️ Minskad miljöpåverkan
+## 🌱 Projektöversikt
 
-## 🧠 Huvudkomponenter
+Sustainable WineMaking är ett projekt för att skapa en **Minimum Viable Product (MVP)** som visar hur svenska druvodlare kan fatta datadrivna beslut med hjälp av AI och IoT. Genom simulering av sensorflöden och bildanalys demonstreras ett beslutstödsystem som kan upptäcka sjukdomar, optimera bevattning och förbättra skördekvalitet – även i klimat med korta växtsäsonger och höga fuktnivåer.
 
-### 📷 AI-analys av grödor
-- **Amazon Rekognition Custom Labels**
-- Bilder laddas upp till S3 → Triggers via Lambda → Analysresultat lagras i DynamoDB
+*Obs: Projektet använder mockup-sensordata i växthusmiljö för att simulera ett verkligt scenario.*
 
-### 📡 IoT-infrastruktur
-- **Sensorer**: markfuktighet, temperatur, luftfuktighet, ljus
-- **AWS IoT Core** hanterar datainsamling i realtid
-- **Kommunikation**: Wi-Fi / 4G / 5G / LoRa
+---
+
+## 🎯 Projektmål
+
+- ✅ Tidig upptäckt av sjukdomar med AI-bildanalys  
+- ✅ Optimerad resursanvändning via sensordata och väderprognoser  
+- ✅ Förbättrad druvkvalitet och stabil avkastning  
+- ✅ Minskad miljöpåverkan  
+
+---
+
+## 🧠 Systemets huvudkomponenter
+
+### 📷 AI för sjukdomsdetektion
+- **Amazon Rekognition Custom Labels**  
+  → Bilder laddas upp till S3  
+  → Triggers med Lambda  
+  → Resultat lagras i RDS (Microsoft SQL Server)
+
+### 📡 IoT-infrastruktur (mockad)
+- Sensorer (simulerade): markfuktighet, temperatur, luftfuktighet, ljus  
+- **AWS IoT Core** hanterar mockup-data i realtid  
+- Kommunikationen är simulerad för demonstration
 
 ### ☁️ Molntjänster och datahantering
-- **S3** för bildlagring
-- **DynamoDB** / **RDS** för strukturerad data
-- **Amazon Quicksight** för datavisualisering och analys
+- **Amazon S3** – lagring av bilder  
+- **Amazon RDS** – lagring av sensorvärden och AI-resultat  
 
-### 🤖 Chatbot & användargränssnitt
-- **Amazon Lex** – användaren kan prata/texta med AI:n för väder, fukt, och rekommendationer
-- **AWS Lambda** – hanterar API-anrop (t.ex. SMHI, OpenCage)
-- **Frontend**: React + AWS Amplify / mobilapp
+### 🤖 Chatbot och gränssnitt
+- **Amazon Lex** – AI-chat för användarfrågor  
+- **AWS Lambda** – logik och integration med väder- och sensor-API  
+- **Frontend** – byggd i Streamlit
 
-## 🛰️ Externa API:er
-- **SMHI** – väderdata baserat på plats
-- **OpenCage** – geokodning av platsnamn till koordinater
-
-## 🏗️ Data Arkitektur
-
-Dataarkitekturen för det här projektet använder tre olika lager **Data Collection**, **Cloud Intelligence and services**, and **Application and interaction**:
-![DataArchitecture_AIochIoT](docs/projektdokumentation/DataArchitecture_AIochIoT.png)
-
-## 🗓️ Tidsplan (sammandrag)
-
-| Månad | Aktivitet |
-|-------|-----------|
-| 0–1   | Förstudie, kravinsamling, teknikval |
-| 1–2   | Teknisk setup, molntjänster, sensorintegration |
-| 2–4   | Bildinsamling & AI-träning (mjöldagg) |
-| 4–6   | Chatbot, SMHI-integration, prototyp |
-| 6–8   | Testning, feedback, förbättringar |
-| 8–10  | Lansering, utökning av funktioner |
-| 10–12 | Effektmätning, drönardata, vidare utveckling |
-
-## 🛡️ Säkerhet och integritet
-- 🔐 Kryptering av data
-- 🔐 Åtkomstkontroll via IAM
-- ✅ GDPR-efterlevnad
-
-## ⚠️ Utmaningar
-- Kvalitetsdata för AI-träning
-- Användarnas tillit till AI
-- Internetberoende i fält
-- Hårdvarans tålighet för väder
-
-## 🧪 Feedback & iteration
-- Beta-testning med vinodlare
-- Workshops & uppföljningar
-- Inbyggd feedback-funktion i appen
-- Agil utveckling: nya funktioner släpps kontinuerligt
-
-## 🔍 Exempel på användning
-> "Risk för mögel i sektion B – hög luftfuktighet och temperatur kombinerat med regnprognos. Rekommenderad åtgärd: besprutning inom 24h."
+### 🌐 Externa API:er
+- **SMHI** – väderdata baserat på koordinater  
+- **OpenCage** – platsnamn → lat/long  
 
 ---
 
+## 🧱 Arkitekturöversikt
+
+Systemet bygger på tre nivåer:  
+1. **Data Collection:** Mockup IoT-sensorer och användarens bilder  
+2. **Cloud Services:** AI, API-anrop och datalagring  
+3. **User Interaction:** Dashboard, chatbot och automatiska rekommendationer
+
+![dataaArchitecture_AIochIoT](docs/projektdokumentation/DataArchitecture_AIochIoT.png)
+
 ---
 
-> 👨‍💻 Projektet har genomförts av Agne Dimaisate, Therese Andersson, Daniel Karlsson och Axel Gummesson (BK24TR)
+## ⚠️ Identifierade utmaningar
+
+- Begränsad datamängd för AI-träning  
+- Internetuppkoppling i fält  
+- Användares tillit till AI-rekommendationer  
+- Robusthet hos hårdvara i växthusmiljö  
+
+---
+
+## 🧪 Exempel på användning
+
+> _"Risk för mögel i sektion B – hög luftfuktighet och temperatur kombinerat med regnprognos. Rekommenderad åtgärd: besprutning inom 24h."_

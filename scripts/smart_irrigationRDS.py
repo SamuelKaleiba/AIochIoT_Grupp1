@@ -1,24 +1,7 @@
 from Mock_data import get_mock_sensor_data
-import pyodbc
-import os
+from db_connection import get_connection
 import time
 import json
-
-# Miljövariabler konfigurerade i AWS Lambda
-rds_host = os.environ['RDS_HOST']
-rds_user = os.environ['RDS_USER']
-rds_password = os.environ['RDS_PASSWORD']
-rds_db_name = os.environ['RDS_DB_NAME']
-rds_port = os.environ.get('RDS_PORT', '1433')
-
-# ODBC-anslutningssträng
-conn_str = (
-    f'DRIVER={{ODBC Driver 17 for SQL Server}};'
-    f'SERVER={rds_host},{rds_port};'
-    f'DATABASE={rds_db_name};'
-    f'UID={rds_user};'
-    f'PWD={rds_password};'
-)
 
 def should_irrigate(data):
     if data['soil_moisture'] < 30 and data['temperature'] > 20:
@@ -31,7 +14,7 @@ def lambda_handler(event, context):
     decision = should_irrigate(data)
 
     try:
-        conn = pyodbc.connect(conn_str, timeout=5)
+        conn = get_connection()
         cursor = conn.cursor()
 
         insert_query = """

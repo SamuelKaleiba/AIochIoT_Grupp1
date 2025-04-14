@@ -46,7 +46,7 @@ def combine_images_and_sensordata(bucket_name, s3):
 
 if __name__ == '__main__':
     # Ange ditt specifika AWS-profilnamn här (t.ex. SSO-profilen)
-    session = boto3.Session(profile_name="Ditt profilnamn här")
+    session = boto3.Session(profile_name="axel")
     s3 = session.client('s3')
     bucket_name = 'agnesbucket.1'  # Namn på S3-bucket
     

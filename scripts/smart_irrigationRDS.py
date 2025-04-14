@@ -1,5 +1,6 @@
 from Mock_data import get_mock_sensor_data
 from db_connection import get_connection
+from db_init import ensure_irrigation_table_exists
 import time
 import json
 

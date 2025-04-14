@@ -1,5 +1,6 @@
 import boto3
 from db_connection import get_connection
+from db_init import ensure_leaf_table_exists
 import time
 
 rekognition = boto3.client('rekognition')

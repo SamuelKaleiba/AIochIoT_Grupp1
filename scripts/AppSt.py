@@ -3,10 +3,19 @@ import pyodbc
 import requests
 import pandas as pd
 from Mock_data import get_mock_sensor_data  
+from db_init import ensure_weather_table_exists, ensure_irrigation_table_exists, ensure_leaf_table_exists
 
 from db_connection import get_connection
 
 conn = get_connection()
+cursor = conn.cursor()
+ensure_weather_table_exists(cursor)
+ensure_irrigation_table_exists(cursor)
+ensure_leaf_table_exists(cursor)
+conn.commit()
+cursor.close()
+conn.close()
+
 
 # Funktion för att lagra väderdata i databasen
 def store_weather_data(timestamp, temp, humidity, rain, light_intensity):
@@ -22,6 +31,25 @@ def store_weather_data(timestamp, temp, humidity, rain, light_intensity):
     conn.commit()  # Spara ändringarna
     cursor.close()
     conn.close()
+
+def fetch_weather_history(limit=20):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    query = f"""
+    SELECT TOP {limit} timestamp, temperatur, luftfuktighet, ljusintensitet 
+    FROM Väderdata
+    ORDER BY timestamp DESC
+    """
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    df = pd.DataFrame(rows, columns=["timestamp", "temperature", "humidity", "light_intensity"])
+    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+    return df.sort_values("timestamp")
+
 
 # --- Apputv ---
 # --- SIDHUVUD ---
@@ -41,6 +69,14 @@ if menu == "📈 Sensoranalys":
     if st.button("🔍 Hämta sensordata"):
         try:
             data = get_mock_sensor_data(location)
+
+            store_weather_data(
+            timestamp=data["timestamp"],
+            temp=data["temperature"],
+            humidity=data["humidity"],
+             rain=0,  # placeholder eftersom mockdata inte har regn
+            light_intensity=data["light_intensity"]
+            )
 
             # Visa sensorvärden med emojis 
             st.subheader(f"📍 Sensorvärden i {location}")
@@ -66,6 +102,24 @@ if menu == "📈 Sensoranalys":
             st.subheader("🌱 Jordfuktighet (%)")
             st.line_chart(pd.DataFrame({"% Jordfuktighet": [data['soil_moisture']]}, index=["Nu"]))
 
+            # --- Historiska grafer från databasen ---
+            st.subheader("📊 Historik från sensordata")
+
+            # Hämta historik från databasen
+            df = fetch_weather_history(limit=20)
+
+            # Temperaturhistorik
+            st.subheader("📈 Temperatur – senaste 20 mätningar")
+            st.line_chart(df.set_index("timestamp")["temperature"])
+
+            # Luftfuktighetshistorik
+            st.subheader("💧 Luftfuktighet – senaste 20 mätningar")
+            st.line_chart(df.set_index("timestamp")["humidity"])
+
+            # Ljusintensitetshistorik
+            st.subheader("💡 Ljusintensitet – senaste 20 mätningar")
+            st.line_chart(df.set_index("timestamp")["light_intensity"])
+            
         except Exception as e:
             st.error(f"🚨 Fel vid hämtning av sensordata: {str(e)}")
 
@@ -113,16 +167,16 @@ if menu == "🌦️ Väder":
 
 # --- BLADANALYS ---
 if menu == "🖼️ Bladanalys (demo)":
-        st.header("🖼️ Bladanalys via AWS Rekognition")
+    st.header("🖼️ Bladanalys via AWS Rekognition")
 
-uploaded_file = st.file_uploader("📷 Ladda upp ett bladfoto (.jpg eller .png)", type=["jpg", "png"])
-bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "my-smartfarm-bucket")
-image_name = st.text_input("🖼️ Ange bildens namn i bucketen")
+    uploaded_file = st.file_uploader("📷 Ladda upp ett bladfoto (.jpg eller .png)", type=["jpg", "png"])
+    bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "my-smartfarm-bucket")
+    image_name = st.text_input("🖼️ Ange bildens namn i bucketen")
 
-if st.button("🔍 Analysera bild"):
+    if st.button("🔍 Analysera bild"):
         if uploaded_file and bucket_name and image_name:
             try:
-                lambda_url = "https://<din-api-gateway-url>/blad-analys"  # Ange din riktiga URL
+                lambda_url = "https://bb2lvspm0g.execute-api.eu-central-1.amazonaws.com/sc"  # Ange din riktiga URL
                 payload = {"bucket": bucket_name, "image": image_name}
                 res = requests.post(lambda_url, json=payload).json()
                 st.write("🩺 Resultat:")

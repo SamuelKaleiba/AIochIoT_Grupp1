@@ -170,7 +170,7 @@ if menu == "🖼️ Bladanalys (demo)":
     st.header("🖼️ Bladanalys via AWS Rekognition")
 
     uploaded_file = st.file_uploader("📷 Ladda upp ett bladfoto (.jpg eller .png)", type=["jpg", "png"])
-    bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "my-smartfarm-bucket")
+    bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "agnesbucket.1")
     image_name = st.text_input("🖼️ Ange bildens namn i bucketen")
 
     if st.button("🔍 Analysera bild"):

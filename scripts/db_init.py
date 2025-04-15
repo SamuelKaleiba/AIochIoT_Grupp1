@@ -2,7 +2,7 @@
 
 
 def ensure_irrigation_table_exists(cursor):
-    cursor.execute("USE RDSadmin")
+    cursor.execute("USE SmartFarming")
     create_query = """
     IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'IrrigationLogs')
     BEGIN
@@ -20,7 +20,7 @@ def ensure_irrigation_table_exists(cursor):
 
 
 def ensure_leaf_table_exists(cursor):
-    cursor.execute("USE RDSadmin")
+    cursor.execute("USE SmartFarming")
     create_query = """
     IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'LeafAnalysisResults')
     BEGIN
@@ -35,7 +35,7 @@ def ensure_leaf_table_exists(cursor):
     cursor.execute(create_query)
 
 def ensure_weather_table_exists(cursor):
-    cursor.execute("USE RDSadmin")
+    cursor.execute("USE SmartFarming")
     create_query = """
     IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Väderdata')
     BEGIN

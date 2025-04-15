@@ -17,4 +17,11 @@ def get_connection():
         f'PWD={rds_password};'
     )
 
-    return pyodbc.connect(conn_str, timeout=5)
+    try:
+        connection = pyodbc.connect(conn_str, timeout=5)
+        print("Connection successful!")
+        return connection
+    except pyodbc.Error as e:
+        print("Failed to connect to the database.")
+        print(f"Error: {e}")
+        return None

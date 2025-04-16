@@ -167,39 +167,43 @@ if menu == "🌦️ Väder":
 
 # --- BLADANALYS ---
 import boto3
-# Hårdkodad SSO-profil för AWS-autentisering
-SSO_PROFILE = "din_sso_profil"  # Ändra till din faktiska SSO-profil
+from boto3.session import Session  # Använd Session från boto3.session
 
-if menu == "🖼️ Bladanalys (demo)":
+# --- Konfiguration (hårdkodade) ---
+SSO_PROFILE = "axel"      # Profilnamnet, se till att du har loggat in med 'aws sso login --profile axel'
+REGION = "eu-central-1"   # Region
+BUCKET_NAME = "agnesbucket.1"  # S3-bucket
+LAMBDA_URL = "https://bb2lvspm0g.execute-api.eu-central-1.amazonaws.com/sc"  # Din Lambda-URL
+
+if st.session_state.get("menu") == "🖼️ Bladanalys (demo)" or st.sidebar.radio("Välj funktion", ["📈 Sensoranalys", "🌦️ Väder", "🖼️ Bladanalys (demo)"]) == "🖼️ Bladanalys (demo)":
     st.header("🖼️ Bladanalys via AWS Rekognition")
     
-    # Fält för att ange S3-bucket och bildnamn i bucketen
-    bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "agnesbucket.1")
-    image_name = st.text_input("🖼️ Ange bildens namn i bucketen (ex: minbild.jpg)")
+    # Användaren anger bildens namn (t.ex. med korrekt filändelse)
+    image_name = st.text_input("🖼️ Ange bildens namn i bucketen (ex: minbild.jpg)", value="minbild.jpg")
     
-    # Fildrop för att ladda upp bildfilen
+    # Ladda upp bild via file uploader
     uploaded_file = st.file_uploader("📷 Ladda upp ett bladfoto (.jpg eller .png)", type=["jpg", "png"])
     
     if st.button("🔍 Analysera bild"):
-        if uploaded_file and bucket_name and image_name:
+        if uploaded_file and image_name:
             try:
-                # Skapa en boto3-session med den hårdkodade SSO-profilen
-                session = boto3.Session(profile_name=SSO_PROFILE)
-                s3_client = session.client("s3")
+                # Skapa AWS-session med SSO-profil (precis som i din Rekognition-kod)
+                session = Session(profile_name=SSO_PROFILE)
                 
-                # Ladda upp filen från minnet direkt till den angivna S3-bucket med det angivna namnet
-                s3_client.upload_fileobj(uploaded_file, bucket_name, image_name)
-                st.info(f"Filen '{image_name}' har laddats upp till bucket '{bucket_name}'.")
+                # Skapa S3-klient och ladda upp filen
+                s3_client = session.client("s3", region_name=REGION)
+                s3_client.upload_fileobj(uploaded_file, BUCKET_NAME, image_name)
+                st.info(f"Filen '{image_name}' har laddats upp till bucket '{BUCKET_NAME}'.")
                 
-                # Anropa Lambda-funktionen med payload som innehåller bucket och image name
-                lambda_url = "https://bb2lvspm0g.execute-api.eu-central-1.amazonaws.com/sc"  # Ändra URL vid behov
-                payload = {"bucket": bucket_name, "image": image_name}
-                res = requests.post(lambda_url, json=payload).json()
+                # Anropa Lambda-funktionen för bildanalys
+                payload = {"bucket": BUCKET_NAME, "image": image_name}
+                res = requests.post(LAMBDA_URL, json=payload).json()
                 
                 st.write("🩺 Resultat:")
                 st.success(res["body"])
             except Exception as e:
-                st.error(f"❌ Kunde inte ladda upp eller anropa Lambda: {str(e)}")
+                st.error(f"❌ Något gick fel: {e}")
         else:
-            st.warning("⚠️ Vänligen fyll i alla fält och ladda upp en bild.")
+            st.warning("⚠️ Vänligen ladda upp en bild och ange ett bildnamn.")
+
 

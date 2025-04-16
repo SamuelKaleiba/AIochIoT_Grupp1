@@ -10,6 +10,19 @@ from Mock_data import get_mock_sensor_data
 from db_init import ensure_weather_table_exists, ensure_irrigation_table_exists, ensure_leaf_table_exists
 from db_connection import get_connection
 
+# --- Appinställningar & CSS-styling ---
+st.set_page_config(page_title="Vinodling i Nowhere", page_icon="🌿", layout="centered")
+st.markdown("""
+    <style>
+        .stApp { background-color: #eaf5e5; }  /* Ljusgrön bakgrund */
+        section[data-testid="stSidebar"] { background-color: #c2e0c2; }  /* Mörkare grön sidopanel */
+        section[data-testid="stSidebar"] .css-1d391kg { color: #003300; }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("🌿 Smart Farming - Grupp1:s Vinodling i Nowhere")
+st.markdown("Här kan du se sensordata, väder, bladanalys och chatta med VäderBot!")
+
 # --- Databasinit ---
 conn = get_connection()
 cursor = conn.cursor()
@@ -20,12 +33,12 @@ conn.commit()
 cursor.close()
 conn.close()
 
-# --- Modellstart-funktion ---
+# --- Funktion för att starta modell ---
 def start_model(project_arn, model_arn, version_name, min_inference_units):
     try:
         session = boto3.Session(profile_name='axel')
         client = session.client('rekognition', config=Config(region_name='eu-central-1'))
-    except NoCredentialsError as e:
+    except NoCredentialsError:
         st.error("❌ AWS SSO-autentisering misslyckades. Kontrollera att du är inloggad.")
         st.stop()
 
@@ -39,7 +52,21 @@ def start_model(project_arn, model_arn, version_name, min_inference_units):
         st.error(f"🚨 Kunde inte starta modellen: {str(e)}")
         st.stop()
 
-# --- Väderdata ---
+# --- Lex funktion ---
+def call_lex_bot(user_input):
+    try:
+        lex_client = boto3.client('lex-runtime', region_name='eu-west-1')
+        response = lex_client.post_text(
+            botName="VäderBot",      # Anpassa om Agne döpte den annorlunda
+            botAlias="Prod",         # Eller "TestBotAlias"
+            userId="streamlit-user",
+            inputText=user_input
+        )
+        return response.get("message", "❓ Inget svar från boten.")
+    except Exception as e:
+        return f"❌ Fel: {str(e)}"
+
+# --- Väderdata till DB ---
 def store_weather_data(timestamp, temp, humidity, rain, light_intensity):
     conn = get_connection()
     cursor = conn.cursor()
@@ -68,12 +95,13 @@ def fetch_weather_history(limit=20):
     df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
     return df.sort_values("timestamp")
 
-# --- Appinställningar ---
-st.set_page_config(page_title="Vinodling i Nowhere", page_icon="🌿", layout="centered")
-st.title("🌿 Smart Farming - Grupp1:s Vinodling i Nowhere")
-st.markdown("Här kan du se sensordata, väder och bladanalys")
-
-menu = st.sidebar.radio("Välj funktion", ["📈 Sensoranalys", "🌦️ Väder", "🖼️ Bladanalys (demo)"])
+# --- Meny ---
+menu = st.sidebar.radio("Välj funktion", [
+    "📈 Sensoranalys", 
+    "🌦️ Väder", 
+    "🖼️ Bladanalys (demo)", 
+    "🤖 VäderBot (chat)"
+])
 
 # --- SENSOR ---
 if menu == "📈 Sensoranalys":
@@ -138,13 +166,6 @@ if menu == "🌦️ Väder":
         except Exception as e:
             st.error(f"😵 Något gick fel: {str(e)}")
 
-# Skapa en s3-klient
-s3 = boto3.client('s3')
-session = boto3.Session(profile_name='Daniel')
-# Sätt din S3-bucket-namn här
-bucket_name = "agnesbucket.1"
-client = session.client('rekognition', config=Config(region_name='eu-central-1'))
-
 # --- BLADANALYS ---
 if menu == "🖼️ Bladanalys (demo)":
     st.header("🖼️ Bladanalys via AWS Rekognition")
@@ -158,7 +179,7 @@ if menu == "🖼️ Bladanalys (demo)":
         start_model(project_arn, model_arn, version_name, min_inference_units)
 
     uploaded_file = st.file_uploader("📷 Ladda upp ett bladfoto (.jpg eller .png)", type=["jpg", "png"])
-    bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "my-smartfarm-bucket")
+    bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "agnesbucket.1")
     image_name = st.text_input("🖼️ Ange bildens namn i bucketen")
 
     if st.button("🔍 Analysera bild"):
@@ -178,3 +199,11 @@ if menu == "🖼️ Bladanalys (demo)":
                 st.error(f"❌ Kunde inte anropa Lambda: {str(e)}")
         else:
             st.warning("⚠️ Vänligen fyll i alla fält och ladda upp en bild.")
+
+# --- VÄDERBOT CHAT ---
+if menu == "🤖 VäderBot (chat)":
+    st.header("🤖 Chatta med VäderBot")
+    user_input = st.text_input("Ställ en väderrelaterad fråga:")
+    if user_input:
+        lex_response = call_lex_bot(user_input)
+        st.success(f"VäderBot: {lex_response}")

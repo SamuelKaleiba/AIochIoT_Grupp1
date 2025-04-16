@@ -2,11 +2,15 @@ import streamlit as st
 import pyodbc
 import requests
 import pandas as pd
+import boto3
+from datetime import datetime
+from botocore.config import Config
+from botocore.exceptions import NoCredentialsError
 from Mock_data import get_mock_sensor_data  
 from db_init import ensure_weather_table_exists, ensure_irrigation_table_exists, ensure_leaf_table_exists
-
 from db_connection import get_connection
 
+# --- Databasinit ---
 conn = get_connection()
 cursor = conn.cursor()
 ensure_weather_table_exists(cursor)
@@ -16,26 +20,41 @@ conn.commit()
 cursor.close()
 conn.close()
 
+# --- Modellstart-funktion ---
+def start_model(project_arn, model_arn, version_name, min_inference_units):
+    try:
+        session = boto3.Session(profile_name='axel')
+        client = session.client('rekognition', config=Config(region_name='eu-central-1'))
+    except NoCredentialsError as e:
+        st.error("❌ AWS SSO-autentisering misslyckades. Kontrollera att du är inloggad.")
+        st.stop()
 
-# Funktion för att lagra väderdata i databasen
+    try:
+        st.info('⏳ Startar modellen...')
+        response = client.start_project_version(ProjectVersionArn=model_arn, MinInferenceUnits=min_inference_units)
+        waiter = client.get_waiter('project_version_running')
+        waiter.wait(ProjectArn=project_arn, VersionNames=[version_name])
+        st.success("✅ Modell är igång!")
+    except Exception as e:
+        st.error(f"🚨 Kunde inte starta modellen: {str(e)}")
+        st.stop()
+
+# --- Väderdata ---
 def store_weather_data(timestamp, temp, humidity, rain, light_intensity):
     conn = get_connection()
     cursor = conn.cursor()
-
-    # SQL-fråga för att sätta in väderdata i databasen
     query = """
     INSERT INTO Väderdata (timestamp, temperatur, luftfuktighet, nederbord, ljusintensitet)
     VALUES (?, ?, ?, ?, ?)
-"""
+    """
     cursor.execute(query, (timestamp, temp, humidity, rain, light_intensity))
-    conn.commit()  # Spara ändringarna
+    conn.commit()
     cursor.close()
     conn.close()
 
 def fetch_weather_history(limit=20):
     conn = get_connection()
     cursor = conn.cursor()
-    
     query = f"""
     SELECT TOP {limit} timestamp, temperatur, luftfuktighet, ljusintensitet 
     FROM Väderdata
@@ -45,81 +64,44 @@ def fetch_weather_history(limit=20):
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
-
     df = pd.DataFrame(rows, columns=["timestamp", "temperature", "humidity", "light_intensity"])
     df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
     return df.sort_values("timestamp")
 
-
-# --- Apputv ---
-# --- SIDHUVUD ---
-
+# --- Appinställningar ---
 st.set_page_config(page_title="Vinodling i Nowhere", page_icon="🌿", layout="centered")
 st.title("🌿 Smart Farming - Grupp1:s Vinodling i Nowhere")
 st.markdown("Här kan du se sensordata, väder och bladanalys")
 
-# --- MENY ---
 menu = st.sidebar.radio("Välj funktion", ["📈 Sensoranalys", "🌦️ Väder", "🖼️ Bladanalys (demo)"])
 
-# --- SENSORANALYS ---
+# --- SENSOR ---
 if menu == "📈 Sensoranalys":
     st.header("📈 Sensorvärden & Bevattningsrekommendation")
     location = st.text_input("📍 Ange plats (för väderdata)", "Stockholm")
-
     if st.button("🔍 Hämta sensordata"):
         try:
             data = get_mock_sensor_data(location)
-
-            store_weather_data(
-            timestamp=data["timestamp"],
-            temp=data["temperature"],
-            humidity=data["humidity"],
-             rain=0,  # placeholder eftersom mockdata inte har regn
-            light_intensity=data["light_intensity"]
-            )
-
-            # Visa sensorvärden med emojis 
+            store_weather_data(data["timestamp"], data["temperature"], data["humidity"], 0, data["light_intensity"])
             st.subheader(f"📍 Sensorvärden i {location}")
             st.write(f"🌡️ **Temperatur:** {data['temperature']}°C")
             st.write(f"💧 **Luftfuktighet:** {data['humidity']}%")
             st.write(f"💡 **Ljusintensitet:** {data['light_intensity']} W/m²")
             st.write(f"🌱 **Jordfuktighet (simulerad):** {data['soil_moisture']}%")
-
-            # Bevattningslogik
             if data['soil_moisture'] < 30 and data['temperature'] > 20:
                 st.warning("💧 Bevattning rekommenderas!")
             else:
                 st.success("✅ Ingen bevattning krävs.")
-
-            # --- Grafer baserat på aktuell sensordata ---
             st.subheader("📊 Sensorgrafik")
-            st.subheader("📈 Temperatur (°C)")
             st.line_chart(pd.DataFrame({"°C": [data['temperature']]}, index=["Nu"]))
-            st.subheader("💧 Luftfuktighet (%)")
             st.line_chart(pd.DataFrame({"% Luftfuktighet": [data['humidity']]}, index=["Nu"]))
-            st.subheader("💡 Ljusintensitet (W/m²)")
             st.line_chart(pd.DataFrame({"W/m² Ljus": [data['light_intensity']]}, index=["Nu"]))
-            st.subheader("🌱 Jordfuktighet (%)")
             st.line_chart(pd.DataFrame({"% Jordfuktighet": [data['soil_moisture']]}, index=["Nu"]))
-
-            # --- Historiska grafer från databasen ---
             st.subheader("📊 Historik från sensordata")
-
-            # Hämta historik från databasen
             df = fetch_weather_history(limit=20)
-
-            # Temperaturhistorik
-            st.subheader("📈 Temperatur – senaste 20 mätningar")
             st.line_chart(df.set_index("timestamp")["temperature"])
-
-            # Luftfuktighetshistorik
-            st.subheader("💧 Luftfuktighet – senaste 20 mätningar")
             st.line_chart(df.set_index("timestamp")["humidity"])
-
-            # Ljusintensitetshistorik
-            st.subheader("💡 Ljusintensitet – senaste 20 mätningar")
             st.line_chart(df.set_index("timestamp")["light_intensity"])
-            
         except Exception as e:
             st.error(f"🚨 Fel vid hämtning av sensordata: {str(e)}")
 
@@ -127,7 +109,6 @@ if menu == "📈 Sensoranalys":
 if menu == "🌦️ Väder":
     st.header("🌦️ Väderdata från SMHI")
     location = st.text_input("📍 Skriv en plats", "Stockholm")
-
     if st.button("Hämta väder"):
         try:
             GEOCODE_URL = f"https://api.opencagedata.com/geocode/v1/json?q={location}&key={st.secrets['OPENCAGE_KEY']}"
@@ -135,52 +116,64 @@ if menu == "🌦️ Väder":
             coords = geo_res.json()['results'][0]['geometry']
             lat = round(coords['lat'], 6)
             lon = round(coords['lng'], 6)
-
             WEATHER_URL = f"https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/{lon}/lat/{lat}/data.json"
             weather_data = requests.get(WEATHER_URL).json()
 
-            def weather_emoji(symbol_code):
-                return {
-                    1: "☀️", 2: "🌤️", 3: "⛅", 4: "☁️", 5: "🌧️",
-                    6: "🌧️", 7: "🌦️", 8: "⛈️", 9: "❄️", 10: "🌨️", 11: "🌫️"
-                }.get(symbol_code, "❓")
+            def weather_emoji(code): return {
+                1: "☀️", 2: "🌤️", 3: "⛅", 4: "☁️", 5: "🌧️", 6: "🌧️",
+                7: "🌦️", 8: "⛈️", 9: "❄️", 10: "🌨️", 11: "🌫️"
+            }.get(code, "❓")
+            def weather_desc(code): return {
+                1: "Klart", 2: "Lätt molnighet", 3: "Växlande molnighet",
+                4: "Mulet", 5: "Lätt regn", 6: "Regn", 7: "Regnskurar",
+                8: "Åska", 9: "Snö", 10: "Snöbyar", 11: "Dimma"
+            }.get(code, "Okänt väder")
 
-            def weather_description(symbol_code):
-                return {
-                    1: "Klart", 2: "Lätt molnighet", 3: "Växlande molnighet",
-                    4: "Mulet", 5: "Lätt regn", 6: "Regn", 7: "Regnskurar",
-                    8: "Åska", 9: "Snö", 10: "Snöbyar", 11: "Dimma"
-                }.get(symbol_code, "Okänt väder")
-
-            if 'timeSeries' in weather_data:
-                st.subheader("🕒 Prognos kommande timmar")
-                for entry in weather_data["timeSeries"][:6]:
-                    time = entry["validTime"][11:16]
-                    params = {p["name"]: p["values"][0] for p in entry["parameters"]}
-                    symbol = params.get("Wsymb2", 0)
-                    emoji = weather_emoji(symbol)
-                    desc = weather_description(symbol)
-                    st.markdown(f"- {emoji} {time} – {desc}, {params.get('t', '?')}°C, 💧 {params.get('r', '?')}%, 🌧️ {params.get('pmean', '?')} mm, 💡 {params.get('swr', '?')} W/m²")
-
+            st.subheader("🕒 Prognos kommande timmar")
+            for entry in weather_data["timeSeries"][:6]:
+                time = entry["validTime"][11:16]
+                params = {p["name"]: p["values"][0] for p in entry["parameters"]}
+                sym = params.get("Wsymb2", 0)
+                st.markdown(f"- {weather_emoji(sym)} {time} – {weather_desc(sym)}, {params.get('t', '?')}°C, 💧 {params.get('r', '?')}%, 🌧️ {params.get('pmean', '?')} mm, 💡 {params.get('swr', '?')} W/m²")
         except Exception as e:
             st.error(f"😵 Något gick fel: {str(e)}")
+
+# Skapa en s3-klient
+s3 = boto3.client('s3')
+session = boto3.Session(profile_name='axel')
+# Sätt din S3-bucket-namn här
+bucket_name = "agnesbucket.1"
+client = session.client('rekognition', config=Config(region_name='eu-central-1'))
 
 # --- BLADANALYS ---
 if menu == "🖼️ Bladanalys (demo)":
     st.header("🖼️ Bladanalys via AWS Rekognition")
 
+    st.subheader("🚀 Starta analysmodell (Custom Labels)")
+    if st.button("🟢 Starta modell"):
+        project_arn = 'arn:aws:rekognition:eu-central-1:390402541367:project/DiseaseDetection1/1744621659141'
+        model_arn = 'arn:aws:rekognition:eu-central-1:390402541367:project/DiseaseDetection1/version/DiseaseDetection1.2025-04-14T11.21.49/1744622509764'
+        version_name = 'DiseaseDetection1.2025-04-14T11.21.49'
+        min_inference_units = 1
+        start_model(project_arn, model_arn, version_name, min_inference_units)
+
     uploaded_file = st.file_uploader("📷 Ladda upp ett bladfoto (.jpg eller .png)", type=["jpg", "png"])
-    bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "agnesbucket.1")
+    bucket_name = st.text_input("🪣 Ange S3-bucket där bilden finns", "my-smartfarm-bucket")
     image_name = st.text_input("🖼️ Ange bildens namn i bucketen")
 
     if st.button("🔍 Analysera bild"):
         if uploaded_file and bucket_name and image_name:
             try:
-                lambda_url = "https://bb2lvspm0g.execute-api.eu-central-1.amazonaws.com/sc"  # Ange din riktiga URL
+                lambda_url = "https://bb2lvspm0g.execute-api.eu-central-1.amazonaws.com/sc"
                 payload = {"bucket": bucket_name, "image": image_name}
-                res = requests.post(lambda_url, json=payload).json()
-                st.write("🩺 Resultat:")
-                st.success(res["body"])
+                res = requests.post(lambda_url, json=payload)
+                st.write("🔍 Rått svar från Lambda (text):", res.text)
+                try:
+                    json_res = res.json()
+                    st.write("🧪 JSON-dekodat svar:", json_res)
+                    st.success(json_res.get("body", "❌ 'body' saknas i JSON"))
+                except Exception as json_error:
+                    st.error(f"❌ Kunde inte tolka svaret som JSON: {str(json_error)}")
             except Exception as e:
                 st.error(f"❌ Kunde inte anropa Lambda: {str(e)}")
         else:

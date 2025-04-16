@@ -140,7 +140,7 @@ if menu == "🌦️ Väder":
 
 # Skapa en s3-klient
 s3 = boto3.client('s3')
-session = boto3.Session(profile_name='axel')
+session = boto3.Session(profile_name='Daniel')
 # Sätt din S3-bucket-namn här
 bucket_name = "agnesbucket.1"
 client = session.client('rekognition', config=Config(region_name='eu-central-1'))

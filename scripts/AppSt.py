@@ -57,7 +57,7 @@ def call_lex_bot(user_input):
     try:
         lex_client = boto3.client('lex-runtime', region_name='eu-west-1')
         response = lex_client.post_text(
-            botName="VäderBot",      # Anpassa om Agne döpte den annorlunda
+            botName="VäderBot",      # Anpassa till din väderbots namn, vad den nu heter
             botAlias="Prod",         # Eller "TestBotAlias"
             userId="streamlit-user",
             inputText=user_input

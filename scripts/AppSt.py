@@ -57,7 +57,7 @@ def call_lex_bot(user_input):
     try:
         lex_client = boto3.client('lex-runtime', region_name='eu-west-1')
         response = lex_client.post_text(
-            botName="VäderBot",      # Anpassa till din väderbots namn, vad den nu heter
+            botName="SmartFarmingBot",      # Anpassa till din väderbots namn, vad den nu heter
             botAlias="Prod",         # Eller "TestBotAlias"
             userId="streamlit-user",
             inputText=user_input
@@ -188,6 +188,7 @@ if menu == "🖼️ Bladanalys (demo)":
                 lambda_url = "https://bb2lvspm0g.execute-api.eu-central-1.amazonaws.com/sc"
                 payload = {"bucket": bucket_name, "image": image_name}
                 res = requests.post(lambda_url, json=payload)
+                st.write("📦 Payload som skickas:", payload)
                 st.write("🔍 Rått svar från Lambda (text):", res.text)
                 try:
                     json_res = res.json()

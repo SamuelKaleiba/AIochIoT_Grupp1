@@ -36,7 +36,7 @@ conn.close()
 # --- Funktion för att starta modell ---
 def start_model(project_arn, model_arn, version_name, min_inference_units):
     try:
-        session = boto3.Session(profile_name='Daniel') # <-- Byt till din AWS-profil
+        session = boto3.Session(profile_name='Jagne') # <-- Byt till din AWS-profil
         client = session.client('rekognition', config=Config(region_name='eu-central-1'))
     except NoCredentialsError:
         st.error("❌ AWS SSO-autentisering misslyckades. Kontrollera att du är inloggad.")
